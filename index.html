@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="id" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0f0c29"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Kamus Arab"/>
+<title>Kamus Arab - Durusul Lughah</title>
+<link rel="manifest" href="./manifest.json"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --bg1:#0f0c29;--bg2:#1a1640;--accent:#818cf8;
+    --card:#ffffff0d;--cardborder:#ffffff18;
+    --text:#fff;--muted:#ffffff55;--muted2:#ffffff22;
+  }
+  body{
+    min-height:100vh;min-height:100dvh;
+    background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);
+    color:var(--text);font-family:'Georgia',serif;
+    display:flex;flex-direction:column;align-items:center;
+    overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom,16px);
+  }
+
+  /* ── HEADER ── */
+  .header{
+    width:100%;max-width:520px;padding:28px 20px 0;
+  }
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .title-label{font-size:10px;letter-spacing:3px;color:var(--accent);font-family:monospace;text-transform:uppercase;}
+  .title-main{font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px;}
+  .score-box{text-align:right;}
+  .score-label{font-size:11px;color:var(--muted);}
+  .score-num{font-size:26px;font-weight:900;color:var(--accent);line-height:1;}
+  .score-total{font-size:13px;color:var(--muted);}
+
+  /* progress */
+  .progress-track{height:3px;background:var(--muted2);border-radius:99px;margin-bottom:16px;}
+  .progress-fill{height:3px;border-radius:99px;background:var(--accent);transition:width .4s ease;box-shadow:0 0 10px var(--accent)88;}
+
+  /* tabs / cats */
+  .cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .cat-btn{
+    padding:5px 11px;border-radius:99px;border:1.5px solid var(--cardborder);
+    background:var(--muted2);color:var(--muted);font-size:11px;font-weight:700;
+    cursor:pointer;transition:all .2s;font-family:monospace;
+  }
+  .cat-btn.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);}
+
+  /* controls */
+  .controls{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .ctrl-btn{
+    padding:6px 13px;border-radius:8px;border:1px solid var(--cardborder);
+    background:var(--muted2);color:var(--muted);font-size:11px;cursor:pointer;
+    font-family:monospace;transition:all .2s;white-space:nowrap;
+  }
+  .ctrl-btn.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent);}
+  .ctrl-btn.reset{color:#f8717188;}
+
+  /* ── CARD ── */
+  .card-wrap{width:100%;max-width:520px;padding:0 20px;}
+  .card{
+    min-height:290px;border-radius:24px;
+    background:var(--card);border:1.5px solid var(--cardborder);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:32px 24px;text-align:center;cursor:pointer;
+    backdrop-filter:blur(20px);position:relative;overflow:hidden;
+    transition:border .3s,box-shadow .3s,background .3s;
+    box-shadow:0 24px 60px #00000066;
+  }
+  .card.flipped{
+    border-color:color-mix(in srgb,var(--accent) 50%,transparent);
+    background:color-mix(in srgb,var(--accent) 10%,transparent);
+    box-shadow:0 24px 60px color-mix(in srgb,var(--accent) 20%,transparent);
+  }
+  .card-dots{
+    position:absolute;inset:0;opacity:.03;pointer-events:none;
+    background-image:radial-gradient(circle,white 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  .card-cat{position:absolute;top:16px;left:16px;font-size:10px;letter-spacing:2px;color:var(--accent);font-family:monospace;text-transform:uppercase;opacity:.8;}
+  .card-num{position:absolute;top:16px;right:16px;font-size:11px;color:var(--muted);font-family:monospace;}
+  .card-known-badge{
+    position:absolute;bottom:14px;right:14px;font-size:10px;
+    padding:3px 8px;border-radius:99px;
+    background:color-mix(in srgb,var(--accent) 25%,transparent);
+    color:var(--accent);font-family:monospace;font-weight:700;
+  }
+  .card-emoji{font-size:54px;line-height:1;margin-bottom:10px;}
+  .card-front-ar{font-size:52px;font-family:serif;color:#fff;line-height:1.3;direction:rtl;}
+  .card-front-id{font-size:26px;font-weight:800;color:#fff;line-height:1.3;}
+  .card-hint{margin-top:18px;font-size:12px;color:var(--muted);font-family:monospace;}
+  .card-back-label{font-size:11px;letter-spacing:2px;color:var(--accent);font-family:monospace;margin-bottom:8px;}
+  .card-back-id{font-size:28px;font-weight:800;color:#fff;line-height:1.3;}
+  .card-back-ar{font-size:36px;font-family:serif;color:var(--accent);opacity:.65;direction:rtl;margin-top:10px;line-height:1.3;}
+
+  /* card animation */
+  @keyframes slideIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes flipIn{from{opacity:0;transform:rotateY(80deg)}to{opacity:1;transform:rotateY(0)}}
+  .anim-in{animation:slideIn .28s ease;}
+  .flip-anim{animation:flipIn .22s ease;}
+
+  /* ── ACTIONS ── */
+  .actions{display:flex;gap:10px;margin-top:16px;}
+  .act-btn{
+    flex:1;padding:14px 0;border-radius:14px;border:1.5px solid;
+    font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;
+    font-family:'Georgia',serif;
+  }
+  .act-unknown{
+    background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:#f87171;
+  }
+  .act-flip{
+    flex:0;padding:14px 16px;border-radius:14px;
+    background:var(--muted2);border:1.5px solid var(--cardborder);
+    color:var(--muted);font-size:20px;cursor:pointer;transition:all .2s;
+  }
+  .act-known{
+    background:color-mix(in srgb,var(--accent) 15%,transparent);
+    border-color:color-mix(in srgb,var(--accent) 45%,transparent);
+    color:var(--accent);
+  }
+  .nav-row{display:flex;gap:8px;margin-top:10px;justify-content:center;}
+  .nav-btn{
+    padding:7px 16px;border-radius:9px;border:1px solid var(--cardborder);
+    background:var(--muted2);color:var(--muted);font-size:11px;cursor:pointer;
+    transition:all .2s;font-family:monospace;
+  }
+  .kb-hint{text-align:center;margin-top:18px;font-size:10px;color:var(--muted2);font-family:monospace;letter-spacing:1px;}
+
+  /* ── EMPTY / DONE ── */
+  .done{text-align:center;padding:60px 20px;}
+  .done-emoji{font-size:56px;}
+  .done-title{font-size:22px;font-weight:900;color:#fff;margin-top:12px;}
+  .done-btn{
+    margin-top:20px;padding:12px 28px;border-radius:12px;
+    background:var(--accent);color:#fff;border:none;
+    font-size:14px;font-weight:700;cursor:pointer;
+  }
+
+  /* Mode tabs */
+  .mode-bar{
+    width:100%;max-width:520px;
+    display:flex;gap:0;padding:0 20px;margin-bottom:0;
+  }
+  .mode-btn{
+    flex:1;padding:10px 0;border:none;background:transparent;
+    color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
+    border-bottom:2px solid transparent;transition:all .2s;font-family:monospace;
+  }
+  .mode-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+  /* ── BROWSE ── */
+  .browse-grid{
+    width:100%;max-width:520px;padding:0 20px;
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  }
+  .browse-card{
+    background:var(--card);border:1px solid var(--cardborder);
+    border-radius:14px;padding:12px 14px;
+    border-left:3px solid var(--accent);
+  }
+  .browse-cat{font-size:9px;color:var(--accent);font-family:monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+  .browse-ar{font-size:24px;font-family:serif;color:#e0e7ff;direction:rtl;text-align:right;margin-bottom:2px;line-height:1.3;}
+  .browse-id{font-size:12px;color:var(--muted);}
+  .search-box{
+    width:100%;max-width:520px;padding:0 20px;margin-bottom:12px;
+  }
+  .search-input{
+    width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--cardborder);
+    background:var(--muted2);color:#fff;font-size:13px;outline:none;
+  }
+  .search-input::placeholder{color:var(--muted);}
+
+  /* ── QUIZ ── */
+  .quiz-wrap{width:100%;max-width:520px;padding:0 20px;}
+  .quiz-q{
+    min-height:160px;border-radius:20px;
+    background:var(--card);border:1.5px solid var(--cardborder);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:28px;text-align:center;margin-bottom:14px;
+  }
+  .quiz-label{font-size:11px;color:var(--muted);font-family:monospace;letter-spacing:1px;margin-bottom:8px;}
+  .quiz-word-ar{font-size:48px;font-family:serif;color:#fff;direction:rtl;line-height:1.3;}
+  .quiz-word-id{font-size:26px;font-weight:800;color:#fff;}
+  .quiz-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .quiz-opt{
+    padding:14px 12px;border-radius:14px;border:1.5px solid var(--cardborder);
+    background:var(--card);color:#fff;font-size:14px;font-weight:600;
+    cursor:pointer;transition:all .2s;text-align:center;
+    font-family:'Georgia',serif;line-height:1.3;
+    min-height:56px;display:flex;align-items:center;justify-content:center;
+  }
+  .quiz-opt.arabic{font-size:22px;font-family:serif;direction:rtl;}
+  .quiz-opt.correct{background:rgba(34,197,94,.2);border-color:#22c55e;}
+  .quiz-opt.wrong{background:rgba(239,68,68,.2);border-color:#ef4444;}
+  .quiz-result{text-align:center;margin-bottom:14px;font-size:14px;color:var(--muted);}
+  .quiz-result strong{color:#fff;}
+  .quiz-next{
+    width:100%;padding:13px;border-radius:12px;border:none;
+    background:var(--accent);color:#fff;font-size:15px;font-weight:800;cursor:pointer;
+  }
+  .quiz-score-row{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;
+  }
+  .quiz-score-badge{
+    background:var(--muted2);border-radius:10px;padding:7px 14px;
+    font-size:13px;font-weight:700;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="title-label">FLASHCARD</div>
+      <div class="title-main">كاموس جيليد ١</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">Hafal</div>
+      <div><span class="score-num" id="scoreNum">0</span><span class="score-total" id="scoreTotal">/0</span></div>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="cats" id="catBar"></div>
+
+  <div class="mode-bar">
+    <button class="mode-btn active" data-mode="flashcard" onclick="setMode('flashcard')">🃏 Flashcard</button>
+    <button class="mode-btn" data-mode="browse" onclick="setMode('browse')">📚 Jelajah</button>
+    <button class="mode-btn" data-mode="quiz" onclick="setMode('quiz')">🎯 Kuis</button>
+  </div>
+</div>
+
+<!-- FLASHCARD UI -->
+<div id="fcUI" style="width:100%">
+  <div class="card-wrap" style="margin-top:18px;">
+    <div class="controls">
+      <button class="ctrl-btn" id="dirBtn" onclick="toggleDir()">🔤 AR → ID</button>
+      <button class="ctrl-btn" id="filterBtn" onclick="toggleFilter()">📦 Semua kartu</button>
+      <button class="ctrl-btn reset" onclick="resetKnown()">↺ Reset</button>
+    </div>
+    <div class="card anim-in" id="mainCard" onclick="flipCard()">
+      <div class="card-dots"></div>
+      <div class="card-cat" id="cardCat"></div>
+      <div class="card-num" id="cardNum"></div>
+      <div id="cardKnownBadge"></div>
+      <div id="cardContent"></div>
+    </div>
+    <div class="actions">
+      <button class="act-btn act-unknown" onclick="markCard('unknown')">← Belum Hafal</button>
+      <button class="act-flip" onclick="flipCard()">↕</button>
+      <button class="act-btn act-known" onclick="markCard('known')">Hafal →</button>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goPrev()">← Kembali</button>
+      <button class="nav-btn" onclick="shuffleDeck()">🔀 Acak</button>
+    </div>
+    <div class="kb-hint">SPASI = balik &nbsp;|&nbsp; ← belum hafal &nbsp;|&nbsp; → hafal</div>
+  </div>
+</div>
+
+<!-- BROWSE UI -->
+<div id="browseUI" style="width:100%;display:none;margin-top:16px;">
+  <div class="search-box">
+    <input class="search-input" id="searchInput" placeholder="🔍 Cari kata Arab atau Indonesia..." oninput="renderBrowse()">
+  </div>
+  <div class="browse-grid" id="browseGrid"></div>
+</div>
+
+<!-- QUIZ UI -->
+<div id="quizUI" style="width:100%;display:none;margin-top:16px;">
+  <div class="quiz-wrap">
+    <div class="quiz-score-row">
+      <div class="quiz-score-badge">✅ <span id="qCorrect">0</span>/<span id="qTotal">0</span> &nbsp;<span id="qPct" style="color:var(--accent)"></span></div>
+      <div style="display:flex;gap:6px;">
+        <button class="ctrl-btn" id="qDirBtn" onclick="toggleQuizDir()">🔤 AR → ID</button>
+        <button class="ctrl-btn reset" onclick="qScore={c:0,t:0};renderQuizScore()">Reset</button>
+      </div>
+    </div>
+    <div id="quizContent"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const WORDS = [
+  // Keluarga
+  {ar:"أَبٌ",id:"Ayah",cat:"Keluarga",e:"👨"},
+  {ar:"أُمٌّ",id:"Ibu",cat:"Keluarga",e:"👩"},
+  {ar:"اِبْنٌ",id:"Anak (Lk)",cat:"Keluarga",e:"👦"},
+  {ar:"بِنْتٌ",id:"Anak (Pr)",cat:"Keluarga",e:"👧"},
+  {ar:"أَخٌ",id:"Saudara (Lk)",cat:"Keluarga",e:"🧑"},
+  {ar:"أُخْتٌ",id:"Saudari (Pr)",cat:"Keluarga",e:"👱‍♀️"},
+  {ar:"زَوْجٌ",id:"Suami",cat:"Keluarga",e:"🤵"},
+  {ar:"زَوْجَةٌ",id:"Istri",cat:"Keluarga",e:"👰"},
+  {ar:"حَفِيدٌ",id:"Cucu",cat:"Keluarga",e:"👶"},
+  {ar:"عَمٌّ",id:"Paman (ayah)",cat:"Keluarga",e:"👨‍🦳"},
+  {ar:"خَالٌ",id:"Paman (ibu)",cat:"Keluarga",e:"👨‍🦱"},
+  {ar:"عَمَّةٌ",id:"Bibi (ayah)",cat:"Keluarga",e:"👩‍🦳"},
+  {ar:"خَالَةٌ",id:"Bibi (ibu)",cat:"Keluarga",e:"👩‍🦱"},
+  // Warna
+  {ar:"أَبْيَضُ",id:"Putih",cat:"Warna",e:"⬜"},
+  {ar:"أَحْمَرُ",id:"Merah",cat:"Warna",e:"🔴"},
+  {ar:"أَخْضَرُ",id:"Hijau",cat:"Warna",e:"🟢"},
+  {ar:"أَزْرَقُ",id:"Biru",cat:"Warna",e:"🔵"},
+  {ar:"أَسْوَدُ",id:"Hitam",cat:"Warna",e:"⬛"},
+  {ar:"أَصْفَرُ",id:"Kuning",cat:"Warna",e:"🟡"},
+  // Sekolah
+  {ar:"أُسْتَاذٌ",id:"Guru",cat:"Sekolah",e:"👨‍🏫"},
+  {ar:"طَالِبٌ",id:"Pelajar (Lk)",cat:"Sekolah",e:"🎒"},
+  {ar:"مَدْرَسَةٌ",id:"Sekolah",cat:"Sekolah",e:"🏫"},
+  {ar:"جَامِعَةٌ",id:"Universitas",cat:"Sekolah",e:"🎓"},
+  {ar:"كِتَابٌ",id:"Buku",cat:"Sekolah",e:"📚"},
+  {ar:"قَلَمٌ",id:"Pena",cat:"Sekolah",e:"✏️"},
+  {ar:"دَفْتَرٌ",id:"Buku Tulis",cat:"Sekolah",e:"📓"},
+  {ar:"فَصْلٌ",id:"Kelas",cat:"Sekolah",e:"🏛️"},
+  {ar:"كُرْسِيٌّ",id:"Kursi",cat:"Sekolah",e:"🪑"},
+  {ar:"مَكْتَبٌ",id:"Meja",cat:"Sekolah",e:"🪵"},
+  {ar:"سَبُّورَةٌ",id:"Papan Tulis",cat:"Sekolah",e:"🖊️"},
+  {ar:"مِسْطَرَةٌ",id:"Penggaris",cat:"Sekolah",e:"📏"},
+  {ar:"اِخْتِبَارٌ",id:"Ujian",cat:"Sekolah",e:"📝"},
+  {ar:"مَكْتَبَةٌ",id:"Perpustakaan",cat:"Sekolah",e:"📖"},
+  // Rumah
+  {ar:"بَيْتٌ",id:"Rumah",cat:"Rumah",e:"🏠"},
+  {ar:"بَابٌ",id:"Pintu",cat:"Rumah",e:"🚪"},
+  {ar:"نَافِذَةٌ",id:"Jendela",cat:"Rumah",e:"🪟"},
+  {ar:"غُرْفَةٌ",id:"Kamar",cat:"Rumah",e:"🛏️"},
+  {ar:"حَمَّامٌ",id:"Kamar Mandi",cat:"Rumah",e:"🚿"},
+  {ar:"مَطْبَخٌ",id:"Dapur",cat:"Rumah",e:"🍳"},
+  {ar:"سَرِيرٌ",id:"Ranjang",cat:"Rumah",e:"🛏️"},
+  {ar:"ثَلَّاجَةٌ",id:"Kulkas",cat:"Rumah",e:"❄️"},
+  {ar:"مِرْوَحَةٌ",id:"Kipas Angin",cat:"Rumah",e:"💨"},
+  {ar:"مِفْتَاحٌ",id:"Kunci",cat:"Rumah",e:"🔑"},
+  {ar:"مِلْعَقَةٌ",id:"Sendok",cat:"Rumah",e:"🥄"},
+  {ar:"سَاعَةٌ",id:"Jam",cat:"Rumah",e:"🕐"},
+  // Hewan
+  {ar:"جَمَلٌ",id:"Unta",cat:"Hewan",e:"🐪"},
+  {ar:"حِصَانٌ",id:"Kuda",cat:"Hewan",e:"🐴"},
+  {ar:"بَقَرَةٌ",id:"Sapi",cat:"Hewan",e:"🐄"},
+  {ar:"دَجَاجَةٌ",id:"Ayam Betina",cat:"Hewan",e:"🐔"},
+  {ar:"دِيكٌ",id:"Ayam Jantan",cat:"Hewan",e:"🐓"},
+  {ar:"بَطَّةٌ",id:"Bebek",cat:"Hewan",e:"🦆"},
+  {ar:"حِمَارٌ",id:"Keledai",cat:"Hewan",e:"🫏"},
+  {ar:"طَائِرٌ",id:"Burung",cat:"Hewan",e:"🐦"},
+  {ar:"كَلْبٌ",id:"Anjing",cat:"Hewan",e:"🐶"},
+  {ar:"عُصْفُورٌ",id:"Burung Pipit",cat:"Hewan",e:"🐤"},
+  // Makanan
+  {ar:"مَاءٌ",id:"Air",cat:"Makanan",e:"💧"},
+  {ar:"لَبَنٌ",id:"Susu",cat:"Makanan",e:"🥛"},
+  {ar:"لَحْمٌ",id:"Daging",cat:"Makanan",e:"🥩"},
+  {ar:"بَيْضَةٌ",id:"Telur",cat:"Makanan",e:"🥚"},
+  {ar:"تُفَّاحٌ",id:"Apel",cat:"Makanan",e:"🍎"},
+  {ar:"سُكَّرٌ",id:"Gula",cat:"Makanan",e:"🍬"},
+  {ar:"قَهْوَةٌ",id:"Kopi",cat:"Makanan",e:"☕"},
+  {ar:"شَايٌ",id:"Teh",cat:"Makanan",e:"🍵"},
+  {ar:"فَاكِهَةٌ",id:"Buah",cat:"Makanan",e:"🍇"},
+  // Sifat
+  {ar:"جَدِيدٌ",id:"Baru",cat:"Sifat",e:"✨"},
+  {ar:"قَدِيمٌ",id:"Lama",cat:"Sifat",e:"🏺"},
+  {ar:"كَبِيرٌ",id:"Besar",cat:"Sifat",e:"🔼"},
+  {ar:"صَغِيرٌ",id:"Kecil",cat:"Sifat",e:"🔽"},
+  {ar:"طَوِيلٌ",id:"Panjang/Tinggi",cat:"Sifat",e:"📏"},
+  {ar:"قَصِيرٌ",id:"Pendek",cat:"Sifat",e:"📐"},
+  {ar:"جَمِيلٌ",id:"Bagus/Indah",cat:"Sifat",e:"😍"},
+  {ar:"سَهْلٌ",id:"Mudah",cat:"Sifat",e:"😊"},
+  {ar:"صَعْبٌ",id:"Sulit",cat:"Sifat",e:"😤"},
+  {ar:"سَرِيعٌ",id:"Cepat",cat:"Sifat",e:"⚡"},
+  {ar:"قَرِيبٌ",id:"Dekat",cat:"Sifat",e:"📍"},
+  {ar:"بَعِيدٌ",id:"Jauh",cat:"Sifat",e:"🗺️"},
+  {ar:"نَظِيفٌ",id:"Bersih",cat:"Sifat",e:"🧹"},
+  {ar:"كَثِيرٌ",id:"Banyak",cat:"Sifat",e:"🔢"},
+  {ar:"قَلِيلٌ",id:"Sedikit",cat:"Sifat",e:"🔣"},
+  {ar:"حُلْوٌ",id:"Manis",cat:"Sifat",e:"🍯"},
+  {ar:"لَذِيذٌ",id:"Lezat",cat:"Sifat",e:"😋"},
+  // Alam
+  {ar:"شَمْسٌ",id:"Matahari",cat:"Alam",e:"☀️"},
+  {ar:"قَمَرٌ",id:"Bulan",cat:"Alam",e:"🌙"},
+  {ar:"نَجْمٌ",id:"Bintang",cat:"Alam",e:"⭐"},
+  {ar:"سَمَاءٌ",id:"Langit",cat:"Alam",e:"🌤️"},
+  {ar:"بَحْرٌ",id:"Laut",cat:"Alam",e:"🌊"},
+  {ar:"شَجَرَةٌ",id:"Pohon",cat:"Alam",e:"🌳"},
+  {ar:"حَدِيقَةٌ",id:"Taman",cat:"Alam",e:"🌺"},
+  // Kata Kerja
+  {ar:"ذَهَبَ",id:"Pergi",cat:"Kata Kerja",e:"🚶"},
+  {ar:"خَرَجَ",id:"Keluar",cat:"Kata Kerja",e:"🚪"},
+  {ar:"رَجَعَ",id:"Pulang",cat:"Kata Kerja",e:"🏠"},
+  {ar:"جَلَسَ",id:"Duduk",cat:"Kata Kerja",e:"🪑"},
+  {ar:"قَالَ",id:"Berkata",cat:"Kata Kerja",e:"💬"},
+  // Ungkapan
+  {ar:"نَعَمْ",id:"Iya",cat:"Ungkapan",e:"✅"},
+  {ar:"لَا",id:"Tidak",cat:"Ungkapan",e:"❌"},
+  {ar:"شُكْرًا",id:"Terima kasih",cat:"Ungkapan",e:"🙏"},
+  {ar:"مَرْحَبًا",id:"Halo/Selamat Datang",cat:"Ungkapan",e:"👋"},
+  {ar:"كَيْفَ حَالُكَ؟",id:"Bagaimana kabarmu?",cat:"Ungkapan",e:"❓"},
+  {ar:"بِخَيْرٍ",id:"Dalam keadaan baik",cat:"Ungkapan",e:"😊"},
+  {ar:"جِدًّا",id:"Sangat",cat:"Ungkapan",e:"💯"},
+  {ar:"أَيْضًا",id:"Juga",cat:"Ungkapan",e:"➕"},
+  {ar:"أَهْلًا وَسَهْلًا",id:"Selamat Datang",cat:"Ungkapan",e:"🎉"},
+];
+
+// ── STATE ──
+let currentCat = "Semua";
+let currentMode = "flashcard";
+let dir = "ar"; // ar=arabic first, id=indonesian first
+let filterMode = "all";
+let deck = [];
+let idx = 0;
+let flipped = false;
+let known = new Set();
+let qDir = "ar";
+let qScore = {c:0, t:0};
+let quizState = null;
+let quizAnswered = false;
+
+const CATS = ["Semua", ...new Set(WORDS.map(w => w.cat))];
+
+function getPool() {
+  let p = currentCat === "Semua" ? [...WORDS] : WORDS.filter(w => w.cat === currentCat);
+  if (filterMode === "unknown") p = p.filter(w => !known.has(w.ar));
+  return p;
+}
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
+}
+
+function buildDeck() {
+  deck = shuffle(getPool());
+  idx = 0; flipped = false;
+}
+
+// ── RENDER ──
+function renderCats() {
+  const bar = document.getElementById("catBar");
+  bar.innerHTML = CATS.map(c =>
+    `<button class="cat-btn ${c===currentCat?'active':''}" onclick="setCat('${c}')">${c}</button>`
+  ).join("");
+}
+
+function renderCard() {
+  const card = deck[idx];
+  if (!card) { renderDone(); return; }
+  const total = deck.length;
+  const knownCount = deck.filter(w => known.has(w.ar)).length;
+
+  document.getElementById("scoreNum").textContent = known.size;
+  document.getElementById("scoreTotal").textContent = "/" + WORDS.length;
+  document.getElementById("progressFill").style.width = (known.size / WORDS.length * 100) + "%";
+  document.getElementById("cardCat").textContent = card.cat;
+  document.getElementById("cardNum").textContent = (idx+1) + "/" + total;
+  document.getElementById("cardKnownBadge").innerHTML = known.has(card.ar)
+    ? '<div class="card-known-badge">✓ HAFAL</div>' : "";
+
+  const mc = document.getElementById("mainCard");
+  mc.className = "card anim-in" + (flipped ? " flipped" : "");
+
+  if (!flipped) {
+    const isAr = dir === "ar";
+    document.getElementById("cardContent").innerHTML = `
+      <div class="card-emoji">${card.e}</div>
+      <div class="${isAr ? 'card-front-ar' : 'card-front-id'}">${isAr ? card.ar : card.id}</div>
+      <div class="card-hint">ketuk untuk lihat arti ↓</div>`;
+  } else {
+    const isAr = dir === "ar";
+    document.getElementById("cardContent").innerHTML = `
+      <div class="card-emoji">${card.e}</div>
+      <div class="card-back-label">ARTINYA</div>
+      <div class="${isAr ? 'card-back-id' : 'card-back-ar flip-anim'}">${isAr ? card.id : card.ar}</div>
+      ${isAr ? `<div class="card-back-ar flip-anim">${card.ar}</div>` : `<div style="font-size:22px;margin-top:8px;opacity:.5">${card.id}</div>`}`;
+  }
+}
+
+function renderDone() {
+  document.getElementById("mainCard").innerHTML = `
+    <div class="done">
+      <div class="done-emoji">🎉</div>
+      <div class="done-title">Semua sudah ditandai!</div>
+      <button class="done-btn" onclick="known=new Set();filterMode='all';buildDeck();renderCard();renderFilterBtn();">Mulai Ulang</button>
+    </div>`;
+  document.querySelector(".actions").style.display = "none";
+}
+
+function renderFilterBtn() {
+  const b = document.getElementById("filterBtn");
+  if (!b) return;
+  if (filterMode === "unknown") {
+    b.textContent = "🔁 Belum hafal saja"; b.className = "ctrl-btn on";
+  } else {
+    b.textContent = "📦 Semua kartu"; b.className = "ctrl-btn";
+  }
+}
+
+function renderBrowse() {
+  const q = document.getElementById("searchInput")?.value?.toLowerCase() || "";
+  let pool = getPool();
+  if (q) pool = pool.filter(w => w.ar.includes(q) || w.id.toLowerCase().includes(q));
+  document.getElementById("browseGrid").innerHTML = pool.map(w => `
+    <div class="browse-card">
+      <div class="browse-cat">${w.cat}</div>
+      <div class="browse-ar">${w.e} ${w.ar}</div>
+      <div class="browse-id">${w.id}</div>
+    </div>`).join("");
+}
+
+function renderQuizScore() {
+  document.getElementById("qCorrect").textContent = qScore.c;
+  document.getElementById("qTotal").textContent = qScore.t;
+  document.getElementById("qPct").textContent = qScore.t > 0
+    ? "(" + Math.round(qScore.c/qScore.t*100) + "%)" : "";
+}
+
+function startQuiz() {
+  const pool = getPool();
+  if (pool.length < 4) {
+    document.getElementById("quizContent").innerHTML =
+      `<div style="text-align:center;padding:40px;color:#f87171;">Pilih kategori dengan minimal 4 kata.</div>`;
+    return;
+  }
+  const ci = Math.floor(Math.random() * pool.length);
+  const correct = pool[ci];
+  const wrongs = shuffle(pool.filter((_,i)=>i!==ci)).slice(0,3);
+  const opts = shuffle([correct,...wrongs]);
+  quizState = {correct, opts};
+  quizAnswered = false;
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const {correct, opts} = quizState;
+  const qWord = qDir === "ar" ? correct.ar : correct.id;
+  const qClass = qDir === "ar" ? "quiz-word-ar" : "quiz-word-id";
+  document.getElementById("quizContent").innerHTML = `
+    <div class="quiz-q">
+      <div class="quiz-label">${qDir==="ar"?"Apa arti kata ini?":"Mana tulisan Arab yang benar?"}</div>
+      <div class="quiz-word-ar" style="font-size:${qDir==="ar"?48:28}px;${qDir!=="ar"?"font-family:'Georgia',serif;font-weight:800":"direction:rtl"}">${qWord}</div>
+    </div>
+    <div class="quiz-grid">
+      ${opts.map((o,i) => {
+        const label = qDir === "ar" ? o.id : o.ar;
+        return `<button class="quiz-opt ${qDir==="id"?"arabic":""}" id="qopt${i}" onclick="answerQuiz(${i})">${label}</button>`;
+      }).join("")}
+    </div>
+    <div id="quizResult"></div>
+    <div id="quizNextWrap"></div>`;
+}
+
+function answerQuiz(i) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const chosen = quizState.opts[i];
+  const isCorrect = chosen.ar === quizState.correct.ar;
+  qScore.t++;
+  if (isCorrect) qScore.c++;
+  renderQuizScore();
+  quizState.opts.forEach((o,j) => {
+    const btn = document.getElementById("qopt"+j);
+    if (o.ar === quizState.correct.ar) btn.classList.add("correct");
+    else if (j === i) btn.classList.add("wrong");
+  });
+  document.getElementById("quizResult").innerHTML =
+    `<div class="quiz-result">Jawaban: <strong>${quizState.correct.ar}</strong> = <strong>${quizState.correct.id}</strong></div>`;
+  document.getElementById("quizNextWrap").innerHTML =
+    `<button class="quiz-next" onclick="startQuiz()">Soal Berikutnya →</button>`;
+}
+
+// ── ACTIONS ──
+function setCat(c) {
+  currentCat = c;
+  renderCats();
+  buildDeck();
+  if (currentMode === "flashcard") {
+    renderCard();
+    document.querySelector(".actions").style.display = "flex";
+  } else if (currentMode === "browse") renderBrowse();
+  else if (currentMode === "quiz") startQuiz();
+}
+
+function flipCard() {
+  flipped = !flipped;
+  renderCard();
+}
+
+function markCard(result) {
+  const card = deck[idx];
+  if (!card) return;
+  if (result === "known") known.add(card.ar);
+  const nextIdx = (idx + 1) % deck.length;
+  idx = nextIdx;
+  flipped = false;
+  document.querySelector(".actions").style.display = "flex";
+  renderCard();
+}
+
+function goPrev() {
+  idx = (idx - 1 + deck.length) % deck.length;
+  flipped = false; renderCard();
+}
+
+function shuffleDeck() {
+  deck = shuffle(deck); idx = 0; flipped = false; renderCard();
+}
+
+function toggleDir() {
+  dir = dir === "ar" ? "id" : "ar";
+  document.getElementById("dirBtn").textContent = dir === "ar" ? "🔤 AR → ID" : "🔤 ID → AR";
+  flipped = false; renderCard();
+}
+
+function toggleFilter() {
+  filterMode = filterMode === "all" ? "unknown" : "all";
+  renderFilterBtn();
+  buildDeck(); renderCard();
+  document.querySelector(".actions").style.display = "flex";
+}
+
+function resetKnown() {
+  known = new Set(); filterMode = "all";
+  renderFilterBtn(); buildDeck(); renderCard();
+  document.querySelector(".actions").style.display = "flex";
+}
+
+function toggleQuizDir() {
+  qDir = qDir === "ar" ? "id" : "ar";
+  document.getElementById("qDirBtn").textContent = qDir === "ar" ? "🔤 AR → ID" : "🔤 ID → AR";
+  startQuiz();
+}
+
+function setMode(m) {
+  currentMode = m;
+  document.querySelectorAll(".mode-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === m);
+  });
+  document.getElementById("fcUI").style.display = m === "flashcard" ? "block" : "none";
+  document.getElementById("browseUI").style.display = m === "browse" ? "block" : "none";
+  document.getElementById("quizUI").style.display = m === "quiz" ? "block" : "none";
+  if (m === "browse") renderBrowse();
+  if (m === "quiz") startQuiz();
+}
+
+// keyboard
+document.addEventListener("keydown", e => {
+  if (currentMode !== "flashcard") return;
+  if (e.key === " " || e.key === "Enter") { e.preventDefault(); flipCard(); }
+  if (e.key === "ArrowRight") markCard("known");
+  if (e.key === "ArrowLeft") markCard("unknown");
+});
+
+// ── INIT ──
+renderCats();
+buildDeck();
+renderCard();
+
+// ── SERVICE WORKER ──
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
